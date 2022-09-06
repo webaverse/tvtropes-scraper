@@ -88,6 +88,6 @@ traverse((url, $) => {
   download: false,
 });
 // write formatted data
-fs.writeFileSync(path.join(formattedDataDirectory, 'tropes.json'), JSON.stringify(tropesCache), 'utf8');
-fs.writeFileSync(path.join(formattedDataDirectory, 'examples.json'), JSON.stringify(examplesCache), 'utf8');
-fs.writeFileSync(path.join(formattedDataDirectory, 'children.json'), JSON.stringify(childrenCache), 'utf8');
+fs.writeFileSync(path.join(formattedDataDirectory, 'tropes.json'), JSON.stringify(tropesCache.toJSON()), 'utf8');
+fs.writeFileSync(path.join(formattedDataDirectory, 'examples.json'), JSON.stringify(examplesCache.toJSON()), 'utf8');
+fs.writeFileSync(path.join(formattedDataDirectory, 'children.json'), JSON.stringify(childrenCache.toJSON()), 'utf8');
