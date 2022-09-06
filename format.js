@@ -14,15 +14,15 @@ const _makePageCache = () => ({
 });
 const tropesCache = _makePageCache();
 const examplesCache = _makePageCache();
-const linksCache = {
+const childrenCache = {
   map: new Map(),
-  add(tropeName, exampleName) {
-    let examples = this.map.get(tropeName);
-    if (!examples) {
-      examples = [];
-      this.map.set(tropeName, examples);
+  add(parentName, childName) {
+    let children = this.map.get(parentName);
+    if (children === undefined) {
+      children = [];
+      this.map.set(parentName, children);
     }
-    examples.push(exampleName);
+    children.push(childName);
   },
   toJSON() {
     return Object.fromEntries(this.map);
@@ -46,7 +46,7 @@ client
     const _log = () => {
       console.log(JSON.stringify(tropesCache, null, 2));
       console.log(JSON.stringify(examplesCache, null, 2));
-      console.log(JSON.stringify(linksCache, null, 2));
+      console.log(JSON.stringify(childrenCache, null, 2));
     };
     const logRate = 100;
     const _tryLog = () => {
@@ -70,7 +70,7 @@ client
         const exampleUrls = getUrls($);
         for (const exampleUrl of exampleUrls) {
           const exampleName = getPageName(exampleUrl);
-          linksCache.add(tropeName, exampleName);
+          childrenCache.add(tropeName, exampleName);
         }
       } else {
         const exampleName = name;
