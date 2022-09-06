@@ -7,23 +7,37 @@ const cheerio = require('cheerio');
 const mkdirp = require('mkdirp');
 
 const u = new URL(`https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`);
-const maxDepth = 5;
+const maxDepth = 4;
 const dataDirectory = `data`;
+const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`];
 
 const _getKey = s => murmur.murmur3(s);
 
 const pageCache = {
   get(u) {
     const key = _getKey(u);
-    try {
-      return fs.readFileSync(path.join(dataDirectory, `${key}.html`), 'utf8');
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        return null;
-      } else {
-        throw err;
+    const _tryGetKey = (key, dataDirectory) => {
+      try {
+        return fs.readFileSync(path.join(dataDirectory, `${key}.html`), 'utf8');
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          return null;
+        } else {
+          throw err;
+        }
+      }
+    };
+    let result = _tryGetKey(key, dataDirectory);
+    if (!result) {
+      for (const extraDataDirectory of extraDataDirectories) {
+        result = _tryGetKey(key, extraDataDirectory);
+        if (result) {
+          this.set(u, result);
+          break;
+        }
       }
     }
+    return result;
   },
   set(u, d) {
     const key = _getKey(u);
@@ -51,11 +65,11 @@ mkdirp.sync(dataDirectory);
         if (cachedText !== null) {
           return cachedText;
         } else {
-          console.log(u);
+          console.log(`${u} (${depth})`);
           const _fetchText = async () => {
-            if (depth > 0) {
-              await _wait(100);
-            }
+            // if (depth > 0) {
+            //   await _wait(100);
+            // }
             const res = await fetch(u);
             if (res.ok || res.status === 404) {
               const text = await res.text();
@@ -94,7 +108,10 @@ mkdirp.sync(dataDirectory);
             return new URL('https://example.com/');
           }
         })
-        .filter(u2 => u2.origin === `https://tvtropes.org` && /^\/pmwiki\/pmwiki\.php/i.test(u2.pathname));
+        .filter(u2 =>
+          u2.origin === `https://tvtropes.org` &&
+          /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes)/.test(u2.pathname)
+        );
 
       // get contents
       {
