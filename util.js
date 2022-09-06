@@ -6,14 +6,15 @@ const cheerio = require('cheerio');
 // const fetch = require('cross-fetch');
 const mkdirp = require('mkdirp');
 
-const u = new URL(`https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`);
+const u = `https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`;
 const maxDepth = 4;
 const dataDirectory = `data`;
-const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`];
-const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|ComicBook|Manga|Fanfic|WesternAnimation|Series|Film)/;
+const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`, `data7`];
+const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|ComicBook|Manga|Fanfic|WesternAnimation|Series|Film|VideoGame)/;
 
 const _getKey = s => murmur.murmur3(s);
 const _getPath = (dataDirectory, key) => path.join(dataDirectory, `${key}.html`);
+const getUrlPath = u => _getPath('data', _getKey(u));
 
 const pageCache = {
   get(u) {
@@ -71,8 +72,6 @@ const traverse = async (fn, {
   download = false,
 } = {}) => {
   const _recurse = async (u, depth = 0) => {
-    u += '';
-
     if (!seenSet.has(u)) {
       seenSet.add(u);
 
@@ -115,33 +114,10 @@ const traverse = async (fn, {
       })();
 
       const $ = cheerio.load(text);
-
-      /* const shouldContinue = (() => {
-        if (depth < 2) {
-          const h2 = $(`#main-article > h2`);
-          const h2InnerTexts = Array.from(h2).map(el => el.innerText ?? '');
-          return !h2InnerTexts.some(h2InnerText => /example/i.test(h2InnerText));
-        } else {
-          return false;
-        }
-      })(); */
+      const urls = getUrls($);
       const shouldContinue = depth < maxDepth;
-      const urls = Array.from($('#main-article ul > li > a')).map(el => {
-        return el.attribs.href;
-      }).filter(u2 => !!u2)
-        .map(u2 => {
-          try {
-            return new URL(u2, u);
-          } catch(err) {
-            return new URL('https://example.com/');
-          }
-        })
-        .filter(u2 =>
-          u2.origin === `https://tvtropes.org` &&
-          mainRegex.test(u2.pathname)
-        );
 
-      fn && fn($);
+      fn && fn(u, $);
 
       if (shouldContinue) {
         for (const u2 of urls) {
@@ -164,7 +140,31 @@ const parse = $ => {
     contents,
   };
 };
+const getAnchors = ($, selector) => {
+  const els = $(selector);
+  const elsArray = Array.from(els);
+  const urls = elsArray.map(el => {
+    return el.attribs.href;
+  })
+    .filter(u2 => !!u2)
+    .map(u2 => {
+      try {
+        return new URL(u2, u);
+      } catch(err) {
+        return new URL('https://example.com/');
+      }
+    })
+    .filter(u2 =>
+      u2.origin === `https://tvtropes.org` &&
+      mainRegex.test(u2.pathname)
+    )
+    .map(u2 => u2 + '');
+  return urls;
+};
+const getUrls = $ => getAnchors($, '#main-article h2 ~ div > ul > li > a, #main-article h2 ~ ul > li > a');
 module.exports = {
+  getUrlPath,
   traverse,
   parse,
+  getUrls,
 };
