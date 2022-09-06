@@ -7,6 +7,7 @@ const fetch = require('cross-fetch');
 const mkdirp = require('mkdirp');
 
 const u = new URL(`https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`);
+const maxDepth = 5;
 const dataDirectory = `data`;
 
 const _getKey = s => murmur.murmur3(s);
@@ -82,7 +83,7 @@ mkdirp.sync(dataDirectory);
           return false;
         }
       })(); */
-      const shouldContinue = depth < 6;
+      const shouldContinue = depth < maxDepth;
       const urls = Array.from($('#main-article ul > li > a')).map(el => {
         return el.attribs.href;
       }).filter(u2 => !!u2)
