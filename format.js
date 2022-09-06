@@ -39,59 +39,62 @@ const childrenCache = {
 
 //
 
+(async () => {
+  mkdirp.sync(formattedDataDirectory);
 
-mkdirp.sync(formattedDataDirectory);
-
-let i = 0;
-const _log = () => {
-  console.log(JSON.stringify(tropesCache, null, 2));
-  console.log(JSON.stringify(examplesCache, null, 2));
-  console.log(JSON.stringify(childrenCache, null, 2));
-};
-const logRate = 100;
-const _tryLog = () => {
-  if ((++i) % logRate === 0) {
-    _log();
-  }
-};
-traverse((url, $) => {
-  console.log(url);
-
-  const hasChildren = (() => {
-    const h2 = $(`#main-article > h2`);
-    const h2InnerTexts = Array.from(h2).map(el => el.innerText ?? '');
-    return !h2InnerTexts.some(h2InnerText => /example/i.test(h2InnerText));
-  })();
-  const page = parse($);
-  const name = getPageName(url);
-  const isTrope = isTropePageName(name);
-  if (isTrope) {
-    const tropeName = name;
-    tropesCache.add(tropeName, page);
-  } else {
-    const exampleName = name;
-    examplesCache.add(exampleName, page);
-  }
-  if (hasChildren) {
-    const parentName = name;
-    const childUrls = getUrls($);
-    for (const childUrl of childUrls) {
-      const childName = getPageName(childUrl);
-      childrenCache.add(parentName, childName);
+  let i = 0;
+  const _log = () => {
+    console.log(JSON.stringify(tropesCache, null, 2));
+    console.log(JSON.stringify(examplesCache, null, 2));
+    console.log(JSON.stringify(childrenCache, null, 2));
+  };
+  const logRate = 100;
+  const _tryLog = () => {
+    if ((++i) % logRate === 0) {
+      _log();
     }
-  }
-  
-  // console.log(page);
+  };
 
-  // _tryLog();
-}, {
-  download: false,
-});
-// write formatted data
-console.log('write 1');
-fs.writeFileSync(path.join(formattedDataDirectory, 'tropes.json'), JSON.stringify(tropesCache.toJSON()), 'utf8');
-console.log('write 2');
-fs.writeFileSync(path.join(formattedDataDirectory, 'examples.json'), JSON.stringify(examplesCache.toJSON()), 'utf8');
-console.log('write 3');
-fs.writeFileSync(path.join(formattedDataDirectory, 'children.json'), JSON.stringify(childrenCache.toJSON()), 'utf8');
-console.log('write done');
+  await traverse((url, $) => {
+    console.log(url);
+
+    const hasChildren = (() => {
+      const h2 = $(`#main-article > h2`);
+      const h2InnerTexts = Array.from(h2).map(el => el.innerText ?? '');
+      return !h2InnerTexts.some(h2InnerText => /example/i.test(h2InnerText));
+    })();
+    const page = parse($);
+    const name = getPageName(url);
+    const isTrope = isTropePageName(name);
+    if (isTrope) {
+      const tropeName = name;
+      tropesCache.add(tropeName, page);
+    } else {
+      const exampleName = name;
+      examplesCache.add(exampleName, page);
+    }
+    if (hasChildren) {
+      const parentName = name;
+      const childUrls = getUrls($);
+      for (const childUrl of childUrls) {
+        const childName = getPageName(childUrl);
+        childrenCache.add(parentName, childName);
+      }
+    }
+    
+    // console.log(page);
+
+    // _tryLog();
+  }, {
+    download: false,
+  });
+
+  // write formatted data
+  console.log('write 1');
+  fs.writeFileSync(path.join(formattedDataDirectory, 'tropes.json'), JSON.stringify(tropesCache.toJSON()), 'utf8');
+  console.log('write 2');
+  fs.writeFileSync(path.join(formattedDataDirectory, 'examples.json'), JSON.stringify(examplesCache.toJSON()), 'utf8');
+  console.log('write 3');
+  fs.writeFileSync(path.join(formattedDataDirectory, 'children.json'), JSON.stringify(childrenCache.toJSON()), 'utf8');
+  console.log('write done');
+})();
