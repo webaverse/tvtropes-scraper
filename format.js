@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 // const {URL} = require('url');
-const {traverse, parse, getUrls, getPageName} = require('./util.js');
+const {traverse, parse, getUrls, getPageName, isTropePageName} = require('./util.js');
 
 const mkdirp = require('mkdirp');
 
@@ -56,27 +56,29 @@ const _tryLog = () => {
 };
 traverse((url, $) => {
   console.log(url);
-  
-  const isTrope = (() => {
+
+  const hasChildren = (() => {
     const h2 = $(`#main-article > h2`);
     const h2InnerTexts = Array.from(h2).map(el => el.innerText ?? '');
     return !h2InnerTexts.some(h2InnerText => /example/i.test(h2InnerText));
   })();
   const page = parse($);
   const name = getPageName(url);
+  const isTrope = isTropePageName(name);
   if (isTrope) {
     const tropeName = name;
     tropesCache.add(tropeName, page);
-
-    // console.log('got trope url', tropeUrl, getUrlPath(tropeUrl));
-    const exampleUrls = getUrls($);
-    for (const exampleUrl of exampleUrls) {
-      const exampleName = getPageName(exampleUrl);
-      childrenCache.add(tropeName, exampleName);
-    }
   } else {
     const exampleName = name;
     examplesCache.add(exampleName, page);
+  }
+  if (hasChildren) {
+    const parentName = name;
+    const childUrls = getUrls($);
+    for (const childUrl of childUrls) {
+      const childName = getPageName(childUrl);
+      childrenCache.add(parentName, childName);
+    }
   }
   
   // console.log(page);

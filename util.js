@@ -10,7 +10,7 @@ const u = `https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`;
 const maxDepth = 4;
 const dataDirectory = `data`;
 const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`, `data7`];
-const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Anime|Series|Film|VideoGame)/;
+const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Anime|Series|Film|VideoGame|Characters)/;
 const nameRegex = /\/pmwiki\/pmwiki\.php\/(.*)$/;
 
 const _getKey = s => murmur.murmur3(s);
@@ -164,10 +164,12 @@ const getAnchors = ($, selector) => {
 };
 const getUrls = $ => getAnchors($, '#main-article h2 ~ div > ul > li > a, #main-article h2 ~ ul > li > a');
 const getPageName = u => u.match(nameRegex)?.[1] ?? '';
+const isTropePageName = u => /^(?:Main|UsefulNotes)/.test(u);
 module.exports = {
   getUrlPath,
   traverse,
   parse,
   getUrls,
   getPageName,
+  isTropePageName,
 };
