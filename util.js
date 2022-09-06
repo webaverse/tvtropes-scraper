@@ -15,7 +15,7 @@ const nameRegex = /\/pmwiki\/pmwiki\.php\/(.*)$/;
 
 const _getKey = s => murmur.murmur3(s);
 const _getPath = (dataDirectory, key) => path.join(dataDirectory, `${key}.html`);
-const getUrlPath = u => _getPath('data', _getKey(u));
+const getUrlPath = u => _getPath(dataDirectory, _getKey(u));
 
 const pageCache = {
   get(u) {
