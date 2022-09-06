@@ -1,5 +1,13 @@
-const weaviate = require('weaviate-client');
+const path = require('path');
+const fs = require('fs');
+// const {URL} = require('url');
 const {traverse, parse, getUrls, getPageName} = require('./util.js');
+
+const mkdirp = require('mkdirp');
+
+//
+
+const formattedDataDirectory = 'formatted-data';
 
 //
 
@@ -31,59 +39,51 @@ const childrenCache = {
 
 //
 
-const client = weaviate.client({
-  scheme: 'http',
-  host: 'weaviate.webaverse.com:8080',
+
+mkdirp.sync(formattedDataDirectory);
+
+let i = 0;
+const _log = () => {
+  console.log(JSON.stringify(tropesCache, null, 2));
+  console.log(JSON.stringify(examplesCache, null, 2));
+  console.log(JSON.stringify(childrenCache, null, 2));
+};
+const logRate = 100;
+const _tryLog = () => {
+  if ((++i) % logRate === 0) {
+    _log();
+  }
+};
+traverse((url, $) => {
+  const isTrope = (() => {
+    const h2 = $(`#main-article > h2`);
+    const h2InnerTexts = Array.from(h2).map(el => el.innerText ?? '');
+    return !h2InnerTexts.some(h2InnerText => /example/i.test(h2InnerText));
+  })();
+  const page = parse($);
+  const name = getPageName(url);
+  if (isTrope) {
+    const tropeName = name;
+    tropesCache.add(tropeName, page);
+
+    // console.log('got trope url', tropeUrl, getUrlPath(tropeUrl));
+    const exampleUrls = getUrls($);
+    for (const exampleUrl of exampleUrls) {
+      const exampleName = getPageName(exampleUrl);
+      childrenCache.add(tropeName, exampleName);
+    }
+  } else {
+    const exampleName = name;
+    examplesCache.add(exampleName, page);
+  }
+  
+  // console.log(page);
+
+  // _tryLog();
+}, {
+  download: false,
 });
-client
-  .schema
-  .getter()
-  .do()
-  .then(res => {
-    // console.log(res);
-
-    let i = 0;
-    const _log = () => {
-      console.log(JSON.stringify(tropesCache, null, 2));
-      console.log(JSON.stringify(examplesCache, null, 2));
-      console.log(JSON.stringify(childrenCache, null, 2));
-    };
-    const logRate = 100;
-    const _tryLog = () => {
-      if ((++i) % logRate === 0) {
-        _log();
-      }
-    };
-    traverse((url, $) => {
-      const isTrope = (() => {
-        const h2 = $(`#main-article > h2`);
-        const h2InnerTexts = Array.from(h2).map(el => el.innerText ?? '');
-        return !h2InnerTexts.some(h2InnerText => /example/i.test(h2InnerText));
-      })();
-      const page = parse($);
-      const name = getPageName(url);
-      if (isTrope) {
-        const tropeName = name;
-        tropesCache.add(tropeName, page);
-
-        // console.log('got trope url', tropeUrl, getUrlPath(tropeUrl));
-        const exampleUrls = getUrls($);
-        for (const exampleUrl of exampleUrls) {
-          const exampleName = getPageName(exampleUrl);
-          childrenCache.add(tropeName, exampleName);
-        }
-      } else {
-        const exampleName = name;
-        examplesCache.add(exampleName, page);
-      }
-      
-      // console.log(page);
-
-      // _tryLog();
-    }, {
-      download: false,
-    });
-  })
-  .catch(err => {
-    console.error(err)
-  });
+// write formatted data
+fs.writeFileSync(path.join(formattedDataDirectory, 'tropes.json'), JSON.stringify(tropesCache), 'utf8');
+fs.writeFileSync(path.join(formattedDataDirectory, 'examples.json'), JSON.stringify(examplesCache), 'utf8');
+fs.writeFileSync(path.join(formattedDataDirectory, 'children.json'), JSON.stringify(childrenCache), 'utf8');
