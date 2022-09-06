@@ -11,6 +11,7 @@ const maxDepth = 4;
 const dataDirectory = `data`;
 const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`, `data7`];
 const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Anime|Series|Film|VideoGame)/;
+const nameRegex = /\/pmwiki\/pmwiki\.php\/(.*)$/;
 
 const _getKey = s => murmur.murmur3(s);
 const _getPath = (dataDirectory, key) => path.join(dataDirectory, `${key}.html`);
@@ -133,7 +134,7 @@ const parse = $ => {
   $('.square_ad').remove();
 
   const title = $('h1').first().text().trim();
-  const contents = $('#main-article').text().trim();
+  const contents = $('#main-article').text().trim().replace(/(\s)+/g, '$1');
   
   return {
     title,
@@ -162,9 +163,11 @@ const getAnchors = ($, selector) => {
   return urls;
 };
 const getUrls = $ => getAnchors($, '#main-article h2 ~ div > ul > li > a, #main-article h2 ~ ul > li > a');
+const getPageName = u => u.match(nameRegex)?.[1] ?? '';
 module.exports = {
   getUrlPath,
   traverse,
   parse,
   getUrls,
+  getPageName,
 };
