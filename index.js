@@ -1,9 +1,9 @@
 const path = require('path');
 const fs = require('fs');
-const {URL} = require('url');
+// const {URL} = require('url');
 const murmur = require('murmurhash-js');
 const cheerio = require('cheerio');
-const fetch = require('cross-fetch');
+// const fetch = require('cross-fetch');
 const mkdirp = require('mkdirp');
 
 const u = new URL(`https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`);
