@@ -55,6 +55,8 @@ const _tryLog = () => {
   }
 };
 traverse((url, $) => {
+  console.log(url);
+  
   const isTrope = (() => {
     const h2 = $(`#main-article > h2`);
     const h2InnerTexts = Array.from(h2).map(el => el.innerText ?? '');
