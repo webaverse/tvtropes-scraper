@@ -50,7 +50,6 @@ client
     };
     const logRate = 100;
     const _tryLog = () => {
-      return;
       if ((++i) % logRate === 0) {
         _log();
       }
@@ -80,7 +79,7 @@ client
       
       // console.log(page);
 
-      _tryLog();
+      // _tryLog();
     }, {
       download: false,
     });
