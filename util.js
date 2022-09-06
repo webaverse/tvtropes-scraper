@@ -9,7 +9,7 @@ const mkdirp = require('mkdirp');
 const u = `https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`;
 const maxDepth = 4;
 const dataDirectory = `data`;
-const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`, `data7`];
+// const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`, `data7`];
 const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Anime|Series|Film|VideoGame|Characters)/;
 const nameRegex = /\/pmwiki\/pmwiki\.php\/(.*)$/;
 
@@ -44,7 +44,7 @@ const pageCache = {
       }
     };
     let result = _tryGetKey(key, dataDirectory);
-    if (!result) {
+    /* if (!result) {
       for (const extraDataDirectory of extraDataDirectories) {
         result = _tryGetKey(key, extraDataDirectory);
         if (result) {
@@ -52,7 +52,7 @@ const pageCache = {
           break;
         }
       }
-    }
+    } */
     return result;
   },
   set(u, d) {
@@ -114,7 +114,7 @@ const traverse = async (fn, {
         }
       })();
 
-      const $ = cheerio.load(text);
+      const $ = cheerio.load(text.replace(/<br\s*\/?>/g, '\n'));
       const urls = getUrls($);
       const shouldContinue = depth < maxDepth;
 
