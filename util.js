@@ -82,7 +82,7 @@ const traverse = async (fn, {
           return cachedText;
         } else {
           if (download) {
-            console.log(`${u} (${depth})`);
+            console.log(`${u} ${_getPath(dataDirectory, _getKey(u))} (${depth})`);
             const _fetchText = async () => {
               // if (depth > 0) {
               //   await _wait(100);
