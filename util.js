@@ -10,7 +10,7 @@ const u = `https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`;
 const maxDepth = 4;
 const dataDirectory = `data`;
 const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`, `data7`];
-const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|ComicBook|Manga|Fanfic|WesternAnimation|Series|Film|VideoGame)/;
+const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Series|Film|VideoGame)/;
 
 const _getKey = s => murmur.murmur3(s);
 const _getPath = (dataDirectory, key) => path.join(dataDirectory, `${key}.html`);
