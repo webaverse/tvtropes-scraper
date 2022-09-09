@@ -1,13 +1,9 @@
 const path = require('path');
 const fs = require('fs');
 // const {URL} = require('url');
-const {traverse, parse, getUrls, getPageName, isTropePageName} = require('./util.js');
+const {formattedDataDirectory, traverse, parse, getUrls, getPageName, isTropePageName} = require('./util.js');
 
 const mkdirp = require('mkdirp');
-
-//
-
-const formattedDataDirectory = 'formatted-data';
 
 //
 

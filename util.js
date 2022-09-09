@@ -6,11 +6,43 @@ const cheerio = require('cheerio');
 // const fetch = require('cross-fetch');
 const mkdirp = require('mkdirp');
 
-const u = `https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`;
+const getArgUrl = () => {
+  switch (process.argv[2]) {
+    case 'settings': return `https://tvtropes.org/pmwiki/pmwiki.php/Main/Settings`;
+    case 'characters': return `https://tvtropes.org/pmwiki/pmwiki.php/Main/Characters`;
+    case 'plotdevices': return `https://tvtropes.org/pmwiki/pmwiki.php/Main/PlotDevice`;
+    default: throw new Error('invalid argument');
+  }
+};
+const u = getArgUrl();
+const getArgDataDirectory = () => {
+  if ([`settings`, `characters`, `plotdevices`].includes(process.argv[2])) {
+    return process.argv[2];
+  } else {
+    throw new Error('invalid argument');
+  }
+};
+const dataDirectory = getArgDataDirectory();
+const extraDataDirectories = [
+  `settings`,
+  `characters`,
+  `plotdevices`,
+  // `settings2`,
+  // `characters2`,
+  // `plotdevices2`,
+];
+const getFormattedDataDirectory = () => {
+  if ([`settings`, `characters`, `plotdevices`].includes(process.argv[2])) {
+    return `formatted-${process.argv[2]}`;
+  } else {
+    throw new Error('invalid argument');
+  }
+};
+const formattedDataDirectory = getFormattedDataDirectory();
 const maxDepth = 4;
-const dataDirectory = `data`;
-// const extraDataDirectories = [`data2`, `data3`, `data4`, `data5`, `data6`, `data7`];
-const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Anime|Series|Film|VideoGame|Characters)/;
+
+// const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Anime|Series|Film|VideoGame|Characters)/;
+const mainRegex = /^\/pmwiki\/pmwiki\.php\/(?:Main|UsefulNotes|Literature|LightNovel|ComicBook|Manga|Fanfic|WesternAnimation|Anime|Series|Film|VideoGame|Characters|Website)/;
 const nameRegex = /\/pmwiki\/pmwiki\.php\/(.*)$/;
 
 const _getKey = s => murmur.murmur3(s);
@@ -44,7 +76,7 @@ const pageCache = {
       }
     };
     let result = _tryGetKey(key, dataDirectory);
-    /* if (!result) {
+    if (!result) {
       for (const extraDataDirectory of extraDataDirectories) {
         result = _tryGetKey(key, extraDataDirectory);
         if (result) {
@@ -52,7 +84,7 @@ const pageCache = {
           break;
         }
       }
-    } */
+    }
     return result;
   },
   set(u, d) {
@@ -84,34 +116,47 @@ const traverse = async (fn, {
           if (download) {
             console.log(`${u} ${_getPath(dataDirectory, _getKey(u))} (${depth})`);
             const _fetchText = async () => {
-              // if (depth > 0) {
-              //   await _wait(100);
-              // }
-              const res = await fetch(u, {
-                redirect: 'manual',
-              });
-              if (res.ok || res.status === 404 || res.status === 301) {
-                const text = await res.text();
+              try {
+                // if (depth > 0) {
+                //   await _wait(100);
+                // }
+                const res = await fetch(u);
+                if (res.ok || res.status === 404) {
+                  const text = await res.text();
 
-                /* const $ = cheerio.load(text);
-                const {title} = parse($);
-                if (title === '403') {
-                  console.warn(res);
-                  throw new Error('got ok 403');
+                  /* const $ = cheerio.load(text);
+                  const {title} = parse($);
+                  if (title === '403') {
+                    console.warn(res);
+                  } */
+
+                  if (!text) {
+                    throw new Error('fetch blank text', u, res.status, res.statusCode);
+                  }
+
+                  pageCache.set(u, text);
+                  return text;
+                } else {
+                  console.log('delaying request due to error:', res.status, res.statusText);
+                  await _wait(60 * 1000);
+                  console.log('trying again');
+                  return await _fetchText();
+                };
+              } catch(err) {
+                // if (/fetch failed/i.test(err.stack)) {
+                  // console.log('got redirect error, trying again');
+                  // return await _fetchText();
+                  console.log('ignoring error', u, err);
+                  return '';
+                /* } else {
+                  throw err;
                 } */
-
-                pageCache.set(u, text);
-                return text;
-              } else {
-                console.log('delaying request due to error:', res.status, res.statusText);
-                await _wait(60 * 1000);
-                console.log('trying again');
-                return await _fetchText();
-              };
+              }
             };
             return await _fetchText();
           } else {
-            return null;
+            console.log('needed download but download was false', u);
+            return '';
           }
         }
       })();
@@ -135,12 +180,14 @@ const parse = $ => {
   $(`#main-article hr ~ *`).remove();
   $('.square_ad').remove();
 
-  const title = $('h1').first().text().trim();
-  const contents = $('#main-article').text().trim().replace(/(\s)+/g, '$1');
+  const title = $('h1').first().text().trim().replace(/(\s)+/g, '$1');
+  const quotes = Array.from($('.indent')).map(el => $(el).text().trim().replace(/(\s)+/g, '$1'));
+  const content = $('#main-article').text().trim().replace(/(\s)+/g, '$1');
   
   return {
     title,
-    contents,
+    quotes,
+    content,
   };
 };
 const getAnchors = ($, selector) => {
@@ -164,10 +211,13 @@ const getAnchors = ($, selector) => {
     .map(u2 => u2 + '');
   return urls;
 };
-const getUrls = $ => getAnchors($, '#main-article h2 ~ div > ul > li > a, #main-article h2 ~ ul > li > a');
+const getUrls = $ => getAnchors($, '#main-article a.twikilink');
+// const getUrls = $ => getAnchors($, '#main-article h2 ~ div > ul > li > a, #main-article h2 ~ ul > li > a');
 const getPageName = u => u.match(nameRegex)?.[1] ?? '';
 const isTropePageName = u => /^(?:Main|UsefulNotes)/.test(u);
 module.exports = {
+  dataDirectory,
+  formattedDataDirectory,
   getUrlPath,
   traverse,
   parse,
