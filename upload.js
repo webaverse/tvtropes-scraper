@@ -162,25 +162,39 @@ const client = weaviate.client({
     }
   }
 
+  const numRetries = 3;
   const _uploadDatas = async datas => {
     const batcher = client.batch.objectsBatcher();
     for (const data of datas) {
       batcher.withObject(data);
     }
     const result = await batcher.do();
+    let ok = true;
     for (const item of result) {
       if (item.result.errors) {
         console.warn(item.result.errors);
+        ok = false;
       }
     }
+    return ok;
   };
   for (let i = 0; i < examples.length; i += batchSize) {
     console.log(`uploading examples (${i}/${examples.length})...`);
-    await _uploadDatas(examples.slice(i, i + batchSize));
+    for (let j = 0; j < numRetries; j++) {
+      const ok = await _uploadDatas(examples.slice(i, i + batchSize));
+      if (ok) {
+        break;
+      }
+    }
   }
   for (let i = 0; i < tropes.length; i += batchSize) {
     console.log(`uploading tropes (${i}/${tropes.length})...`);
-    await _uploadDatas(tropes.slice(i, i + batchSize));
+    for (let j = 0; j < numRetries; j++) {
+      const ok = await _uploadDatas(tropes.slice(i, i + batchSize));
+      if (ok) {
+        break;
+      }
+    }
   }
 })().catch(err => {
   console.error(err)
