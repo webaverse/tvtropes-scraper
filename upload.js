@@ -61,6 +61,13 @@ const schemas = [
         "description": "Type of example",
         "name": "type"
       },
+      {
+        "dataType": [
+          "string[]"
+        ],
+        "description": "Quotes from the page",
+        "name": "quotes"
+      },
     ],
   },
   {
