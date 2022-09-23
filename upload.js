@@ -162,7 +162,7 @@ const client = weaviate.client({
     }
   }
 
-  const numRetries = 3;
+  const numRetries = 10;
   const _uploadDatas = async datas => {
     const batcher = client.batch.objectsBatcher();
     for (const data of datas) {
@@ -185,6 +185,9 @@ const client = weaviate.client({
       if (ok) {
         break;
       }
+      if (j === numRetries - 1) {
+        throw new Error('failed to upload all examples');
+      }
     }
   }
   for (let i = 0; i < tropes.length; i += batchSize) {
@@ -193,6 +196,9 @@ const client = weaviate.client({
       const ok = await _uploadDatas(tropes.slice(i, i + batchSize));
       if (ok) {
         break;
+      }
+      if (j === numRetries - 1) {
+        throw new Error('failed to upload all examples');
       }
     }
   }
