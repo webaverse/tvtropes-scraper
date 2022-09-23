@@ -167,7 +167,12 @@ const client = weaviate.client({
     for (const data of datas) {
       batcher.withObject(data);
     }
-    await batcher.do();
+    const result = await batcher.do();
+    for (const item of result) {
+      if (item.result.errors) {
+        console.warn(item.result.errors);
+      }
+    }
   };
   for (let i = 0; i < examples.length; i += batchSize) {
     console.log(`uploading examples (${i}/${examples.length})...`);
